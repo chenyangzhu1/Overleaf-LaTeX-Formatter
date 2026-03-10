@@ -9,7 +9,9 @@
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-  "permissions": [],
+  "permissions": [
+    "storage"
+  ],
   "host_permissions": [
     "https://www.overleaf.com/*",
     "https://*.overleaf.com/*"
@@ -41,6 +43,7 @@
       ],
       "js": [
         "src/shortcut.js",
+        "src/floating-button-position.js",
         "src/content.js"
       ],
       "run_at": "document_idle",

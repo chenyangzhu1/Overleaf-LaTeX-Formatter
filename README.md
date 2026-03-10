@@ -6,9 +6,10 @@ A Chrome extension for Overleaf that formats the entire LaTeX file in the active
 
 - Supports two trigger methods:
   - Click the extension icon in the Chrome toolbar
-  - Click the `Format` button at the bottom-right corner of the Overleaf page
+  - Click the floating format button on the Overleaf page
 - Supports keyboard shortcut trigger (default on macOS: `Command+Shift+U`)
 - Processes content locally in the browser only (no document upload)
+- The floating button starts in the bottom-left corner, can be dragged, snaps to the nearest side, and remembers its last position
 - Current formatting rules:
   - Normalize line endings to `\n`
   - Remove trailing whitespace on normal lines
@@ -20,6 +21,7 @@ A Chrome extension for Overleaf that formats the entire LaTeX file in the active
 - `manifest.json`: Extension manifest
 - `src/background.js`: Handles toolbar icon and command triggers
 - `src/content.js`: Injects scripts, renders page button, and shows toasts
+- `src/floating-button-position.js`: Floating button geometry and drag-threshold helpers
 - `src/editor-target.js`: Selects the most likely LaTeX editor target from candidates
 - `src/injected.js`: Reads/writes editor content in page context
 - `src/formatter.js`: Core formatter logic
@@ -40,9 +42,11 @@ A Chrome extension for Overleaf that formats the entire LaTeX file in the active
 1. Open an Overleaf project and enter any LaTeX editor page
 2. Trigger formatting by one of the following:
    - Click the extension icon
-   - Click the `Format` button in the page
+   - Click the floating format button in the page
    - Press `Command+Shift+U` (macOS)
-3. The extension formats the full content of the active editor and shows a toast in the top-right corner
+3. The floating button appears as a draggable icon-only bubble in the bottom-left corner by default
+4. Dragging the button lets you reposition it; releasing snaps it to the left or right edge and saves that position
+5. The extension formats the full content of the active editor and shows a toast in the top-right corner
 
 ## Testing
 

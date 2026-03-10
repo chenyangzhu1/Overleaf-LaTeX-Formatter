@@ -50,5 +50,12 @@ test('loads shortcut helper before content script', () => {
   const contentEntry = manifest.content_scripts && manifest.content_scripts[0];
 
   assert.ok(contentEntry, 'content script entry should exist');
-  assert.deepEqual(contentEntry.js, ['src/shortcut.js', 'src/content.js']);
+  assert.deepEqual(contentEntry.js, ['src/shortcut.js', 'src/floating-button-position.js', 'src/content.js']);
+});
+
+test('declares storage permission for floating button persistence', () => {
+  const manifest = readManifest();
+
+  assert.ok(Array.isArray(manifest.permissions), 'permissions section should exist');
+  assert.equal(manifest.permissions.includes('storage'), true);
 });
