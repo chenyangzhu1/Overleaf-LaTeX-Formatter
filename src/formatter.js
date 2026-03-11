@@ -124,6 +124,73 @@
     }
   }
 
+  function formatPlainLatexLines(lines, indent) {
+    const outputLines = [];
+    const envStack = [];
+    let indentLevel = 0;
+
+    for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
+      const originalLine = trimTrailingWhitespace(lines[lineIndex]);
+      const trimmedCode = originalLine.trim();
+
+      const startsElse = isElseStart(trimmedCode);
+      const startsFi = isFiStart(trimmedCode);
+      const startsIf = isIfStart(trimmedCode);
+      const leadingEndCount = countLeadingEndCommands(trimmedCode);
+      const dedentBefore = leadingEndCount + (startsElse ? 1 : 0) + (startsFi ? 1 : 0);
+
+      const beginCount = countMatches(BEGIN_RE, originalLine);
+      const endCount = countMatches(END_RE, originalLine);
+      const trailingEndCount = Math.max(endCount - leadingEndCount, 0);
+
+      function advanceIndentState() {
+        const lineIndentLevel = Math.max(indentLevel - dedentBefore, 0);
+        let nextIndent = lineIndentLevel + beginCount + (startsIf ? 1 : 0) + (startsElse ? 1 : 0) - trailingEndCount;
+        if (nextIndent < 0) {
+          nextIndent = 0;
+        }
+
+        indentLevel = nextIndent;
+        return lineIndentLevel;
+      }
+
+      if (isNoFormatActive(envStack)) {
+        outputLines.push(originalLine);
+        if (trimmedCode !== '') {
+          advanceIndentState();
+        }
+        updateEnvironmentStack(envStack, originalLine);
+        continue;
+      }
+
+      if (trimmedCode === '') {
+        outputLines.push('');
+        updateEnvironmentStack(envStack, originalLine);
+        continue;
+      }
+
+      const lineIndentLevel = advanceIndentState();
+      outputLines.push(indent.repeat(lineIndentLevel) + originalLine.trimStart());
+      updateEnvironmentStack(envStack, originalLine);
+    }
+
+    return outputLines;
+  }
+
+  function normalizeCommentContent(commentPart) {
+    return trimTrailingWhitespace(commentPart.slice(1)).trimStart();
+  }
+
+  function formatCommentBlock(commentParts, baseIndentLevel, indent) {
+    const commentBodies = commentParts.map((commentPart) => normalizeCommentContent(commentPart));
+    const formattedBodies = formatPlainLatexLines(commentBodies, indent);
+
+    return formattedBodies.map((line) => {
+      const prefix = indent.repeat(baseIndentLevel) + '%';
+      return line === '' ? prefix : `${prefix} ${line}`;
+    });
+  }
+
   function formatLatex(input, options) {
     const text = typeof input === 'string' ? input : '';
     const normalizedInput = normalizeLineEndings(text);
@@ -139,10 +206,30 @@
     const envStack = [];
     let indentLevel = 0;
 
-    for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
+    for (let lineIndex = 0; lineIndex < lines.length;) {
       const originalLine = lines[lineIndex];
       const { codePart, commentPart } = splitCodeAndComment(originalLine);
       const trimmedCode = codePart.trim();
+
+      if (trimmedCode === '' && commentPart) {
+        const commentParts = [];
+        const baseIndentLevel = indentLevel;
+
+        while (lineIndex < lines.length) {
+          const nextLine = lines[lineIndex];
+          const nextParts = splitCodeAndComment(nextLine);
+
+          if (nextParts.codePart.trim() !== '' || !nextParts.commentPart) {
+            break;
+          }
+
+          commentParts.push(nextParts.commentPart);
+          lineIndex += 1;
+        }
+
+        outputLines.push(...formatCommentBlock(commentParts, baseIndentLevel, indent));
+        continue;
+      }
 
       const startsElse = isElseStart(trimmedCode);
       const startsFi = isFiStart(trimmedCode);
@@ -171,18 +258,29 @@
           advanceIndentState();
         }
         updateEnvironmentStack(envStack, codePart);
+        lineIndex += 1;
         continue;
       }
 
       if (trimmedCode === '') {
         outputLines.push(commentPart ? originalLine : '');
         updateEnvironmentStack(envStack, codePart);
+        lineIndex += 1;
         continue;
       }
 
       const lineIndentLevel = advanceIndentState();
-      outputLines.push(indent.repeat(lineIndentLevel) + trimTrailingWhitespace(originalLine.trimStart()));
+      let formattedLine = indent.repeat(lineIndentLevel) + trimTrailingWhitespace(codePart.trimStart());
+
+      if (commentPart) {
+        const formattedComment = formatCommentBlock([commentPart], 0, indent)[0];
+        const normalizedComment = formattedComment.slice(2);
+        formattedLine += normalizedComment ? ` % ${normalizedComment}` : ' %';
+      }
+
+      outputLines.push(formattedLine);
       updateEnvironmentStack(envStack, codePart);
+      lineIndex += 1;
     }
 
     let formatted = outputLines.join('\n');
