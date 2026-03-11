@@ -35,20 +35,6 @@ function triggerFormatForTab(tabId, trigger) {
   );
 }
 
-chrome.commands.onCommand.addListener((command) => {
-  if (command !== 'format_latex') {
-    return;
-  }
-
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    if (!Array.isArray(tabs) || tabs.length === 0 || typeof tabs[0].id !== 'number') {
-      return;
-    }
-
-    triggerFormatForTab(tabs[0].id, 'shortcut');
-  });
-});
-
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (!message || message.type !== 'LF_BROADCAST_FORMAT') {
     return;

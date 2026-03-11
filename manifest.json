@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Overleaf LaTeX Formatter",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Format the active LaTeX file in Overleaf via toolbar or in-page button.",
   "icons": {
     "16": "icons/icon16.png",
@@ -26,15 +26,6 @@
       "32": "icons/icon32.png"
     }
   },
-  "commands": {
-    "format_latex": {
-      "suggested_key": {
-        "default": "Alt+Shift+U",
-        "mac": "Command+Shift+U"
-      },
-      "description": "Format current LaTeX file in Overleaf"
-    }
-  },
   "content_scripts": [
     {
       "matches": [
@@ -42,7 +33,6 @@
         "https://*.overleaf.com/*"
       ],
       "js": [
-        "src/shortcut.js",
         "src/floating-button-position.js",
         "src/content.js"
       ],

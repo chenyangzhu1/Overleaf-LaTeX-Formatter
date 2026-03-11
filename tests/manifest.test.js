@@ -11,12 +11,10 @@ function readManifest() {
   return JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
 }
 
-test('declares format command with mac shortcut', () => {
+test('does not declare extension shortcut commands', () => {
   const manifest = readManifest();
 
-  assert.ok(manifest.commands, 'commands section should exist');
-  assert.ok(manifest.commands.format_latex, 'format_latex command should exist');
-  assert.equal(manifest.commands.format_latex.suggested_key.mac, 'Command+Shift+U');
+  assert.equal('commands' in manifest, false);
 });
 
 test('declares extension icons for store publishing', () => {
@@ -45,12 +43,12 @@ test('icon files referenced by manifest exist', () => {
   }
 });
 
-test('loads shortcut helper before content script', () => {
+test('does not load shortcut helper before content script', () => {
   const manifest = readManifest();
   const contentEntry = manifest.content_scripts && manifest.content_scripts[0];
 
   assert.ok(contentEntry, 'content script entry should exist');
-  assert.deepEqual(contentEntry.js, ['src/shortcut.js', 'src/floating-button-position.js', 'src/content.js']);
+  assert.deepEqual(contentEntry.js, ['src/floating-button-position.js', 'src/content.js']);
 });
 
 test('declares storage permission for floating button persistence', () => {

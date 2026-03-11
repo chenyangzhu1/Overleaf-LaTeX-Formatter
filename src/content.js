@@ -4,8 +4,6 @@ const CHANNEL = 'latex-format-extension';
 const BUTTON_ID = 'latex-format-extension-button';
 const TOAST_HOST_ID = 'latex-format-extension-toast-host';
 const IS_TOP_FRAME = window.top === window;
-const SHORTCUT_KEY = 'u';
-const SHORTCUT_FALLBACK_DELAY_MS = 240;
 const BUTTON_STORAGE_KEY = 'latex-format-extension-button-position';
 const BUTTON_SIZE = 54;
 const BUTTON_MARGIN = 20;
@@ -13,20 +11,12 @@ const BUTTON_DRAG_THRESHOLD = 6;
 
 let injectionPromise = null;
 let observerAttached = false;
-let shortcutFallbackTimer = null;
 let viewportResizeAttached = false;
 let floatingButtonState = null;
 let floatingButtonStateRestored = false;
 let restoreButtonStatePromise = null;
 let suppressButtonClick = false;
 let floatingButtonInteractionVersion = 0;
-
-const shortcutArbiter = window.LatexShortcut && typeof window.LatexShortcut.createShortcutArbiter === 'function'
-  ? window.LatexShortcut.createShortcutArbiter({
-      fallbackDelayMs: SHORTCUT_FALLBACK_DELAY_MS,
-      suppressCommandAfterFallbackMs: 500
-    })
-  : null;
 
 function injectPageScript(path) {
   return new Promise((resolve, reject) => {
@@ -656,84 +646,16 @@ function handleInjectedResult(event) {
   showToast('No formatting changes needed', 'info');
 }
 
-function isFormatShortcutEvent(event) {
-  if (window.LatexShortcut && typeof window.LatexShortcut.isFormatShortcut === 'function') {
-    return window.LatexShortcut.isFormatShortcut(event);
-  }
-
-  if (!event || event.isComposing) {
-    return false;
-  }
-
-  if (typeof event.key !== 'string' || event.key.toLowerCase() !== SHORTCUT_KEY) {
-    return false;
-  }
-
-  const isMacCommandShortcut = !!event.metaKey && !!event.shiftKey && !event.altKey && !event.ctrlKey;
-  const isFallbackShortcut = !!event.altKey && !!event.shiftKey && !event.metaKey && !event.ctrlKey;
-
-  return isMacCommandShortcut || isFallbackShortcut;
-}
-
-function handleKeydown(event) {
-  if (!isFormatShortcutEvent(event)) {
-    return;
-  }
-
-  event.preventDefault();
-  event.stopPropagation();
-
-  if (shortcutArbiter && typeof shortcutArbiter.noteShortcutPressed === 'function') {
-    shortcutArbiter.noteShortcutPressed();
-  }
-
-  if (shortcutFallbackTimer) {
-    clearTimeout(shortcutFallbackTimer);
-  }
-
-  shortcutFallbackTimer = setTimeout(() => {
-    shortcutFallbackTimer = null;
-
-    const shouldRunFallback = shortcutArbiter && typeof shortcutArbiter.shouldRunFallback === 'function'
-      ? shortcutArbiter.shouldRunFallback()
-      : true;
-
-    if (!shouldRunFallback) {
-      return;
-    }
-
-    triggerFormat('shortcut-fallback');
-  }, SHORTCUT_FALLBACK_DELAY_MS);
-}
-
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (!message || message.type !== 'LF_TRIGGER_FORMAT') {
     return;
   }
 
-  const trigger = message.trigger || 'toolbar';
-
-  if (trigger === 'shortcut') {
-    if (shortcutFallbackTimer) {
-      clearTimeout(shortcutFallbackTimer);
-      shortcutFallbackTimer = null;
-    }
-
-    if (shortcutArbiter && typeof shortcutArbiter.noteShortcutCommand === 'function') {
-      const shouldApplyCommand = shortcutArbiter.noteShortcutCommand();
-      if (!shouldApplyCommand) {
-        sendResponse({ ok: true, skipped: 'duplicate-shortcut' });
-        return;
-      }
-    }
-  }
-
-  triggerFormat(trigger);
+  triggerFormat(message.trigger || 'toolbar');
   sendResponse({ ok: true });
 });
 
 window.addEventListener('message', handleInjectedResult);
-window.addEventListener('keydown', handleKeydown, true);
 
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
