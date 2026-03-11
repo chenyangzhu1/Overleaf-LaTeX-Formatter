@@ -1,6 +1,48 @@
 'use strict';
 
+function clampSelectionOffset(offset, docLength) {
+  const maxOffset = Number.isFinite(docLength) ? Math.max(0, docLength) : 0;
+
+  if (!Number.isFinite(offset)) {
+    return maxOffset;
+  }
+
+  if (offset < 0) {
+    return 0;
+  }
+
+  if (offset > maxOffset) {
+    return maxOffset;
+  }
+
+  return offset;
+}
+
+function clampCodeMirror6Selection(selection, docLength) {
+  const mainSelection = selection && selection.main ? selection.main : selection || {};
+  const anchor = clampSelectionOffset(mainSelection.anchor, docLength);
+  const head = clampSelectionOffset(
+    Number.isFinite(mainSelection.head) ? mainSelection.head : mainSelection.anchor,
+    docLength
+  );
+
+  return {
+    anchor,
+    head
+  };
+}
+
+if (typeof module === 'object' && module.exports) {
+  module.exports = {
+    clampCodeMirror6Selection
+  };
+}
+
 (function installInjectedRuntime() {
+  if (typeof window === 'undefined' || typeof document === 'undefined') {
+    return;
+  }
+
   if (window.__latexFormatRuntimeInstalled) {
     return;
   }
@@ -255,7 +297,7 @@
         return view.state.doc.toString();
       },
       setValue(nextText) {
-        const selection = view.state.selection;
+        const selection = clampCodeMirror6Selection(view.state.selection, nextText.length);
         const docLength = view.state.doc.length;
         view.dispatch({
           changes: {

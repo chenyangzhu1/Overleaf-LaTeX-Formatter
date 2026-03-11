@@ -19,6 +19,10 @@
     return text.replace(/\r\n?/g, '\n');
   }
 
+  function trimTrailingWhitespace(line) {
+    return line.replace(/[ \t]+$/g, '');
+  }
+
   function splitCodeAndComment(line) {
     for (let i = 0; i < line.length; i += 1) {
       if (line[i] !== '%') {
@@ -137,7 +141,7 @@
 
     for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
       const originalLine = lines[lineIndex];
-      const { codePart } = splitCodeAndComment(originalLine);
+      const { codePart, commentPart } = splitCodeAndComment(originalLine);
       const trimmedCode = codePart.trim();
 
       const startsElse = isElseStart(trimmedCode);
@@ -171,13 +175,13 @@
       }
 
       if (trimmedCode === '') {
-        outputLines.push('');
+        outputLines.push(commentPart ? originalLine : '');
         updateEnvironmentStack(envStack, codePart);
         continue;
       }
 
       const lineIndentLevel = advanceIndentState();
-      outputLines.push(indent.repeat(lineIndentLevel) + originalLine.trim());
+      outputLines.push(indent.repeat(lineIndentLevel) + trimTrailingWhitespace(originalLine.trimStart()));
       updateEnvironmentStack(envStack, codePart);
     }
 

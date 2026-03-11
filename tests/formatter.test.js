@@ -87,3 +87,45 @@ test('normalizes line endings and trims trailing whitespace on normal lines', ()
 
   assert.equal(output, '\\begin{document}\n    \\section{A}\n\\end{document}\n');
 });
+
+test('preserves standalone comments while formatting latex around them', () => {
+  const input = [
+    '\\begin{document}',
+    '  % keep this comment exactly',
+    '\\section{A}',
+    '%leave this one too',
+    '\\end{document}'
+  ].join('\n');
+
+  const output = formatLatex(input);
+
+  assert.equal(
+    output,
+    [
+      '\\begin{document}',
+      '  % keep this comment exactly',
+      '    \\section{A}',
+      '%leave this one too',
+      '\\end{document}'
+    ].join('\n')
+  );
+});
+
+test('preserves inline comment text when reindenting latex code', () => {
+  const input = [
+    '\\begin{document}',
+    ' \\section{A}   % keep spacing before comment',
+    '\\end{document}'
+  ].join('\n');
+
+  const output = formatLatex(input);
+
+  assert.equal(
+    output,
+    [
+      '\\begin{document}',
+      '    \\section{A}   % keep spacing before comment',
+      '\\end{document}'
+    ].join('\n')
+  );
+});
