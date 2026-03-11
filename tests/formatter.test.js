@@ -129,3 +129,66 @@ test('preserves inline comment text when reindenting latex code', () => {
     ].join('\n')
   );
 });
+
+test('formats commented-out latex blocks with their own indentation', () => {
+  const input = [
+    '\\begin{document}',
+    '%   \\begin{itemize}',
+    '%\\item A',
+    '%   \\end{itemize}   ',
+    '\\end{document}'
+  ].join('\n');
+
+  const output = formatLatex(input);
+
+  assert.equal(
+    output,
+    [
+      '\\begin{document}',
+      '    % \\begin{itemize}',
+      '    %     \\item A',
+      '    % \\end{itemize}',
+      '\\end{document}'
+    ].join('\n')
+  );
+});
+
+test('formats inline comment latex without changing later real-code indentation', () => {
+  const input = [
+    '\\begin{document}',
+    '  \\section{A}   %    \\begin{itemize}   ',
+    '\\textbf{B}',
+    '\\end{document}'
+  ].join('\n');
+
+  const output = formatLatex(input);
+
+  assert.equal(
+    output,
+    [
+      '\\begin{document}',
+      '    \\section{A} % \\begin{itemize}',
+      '    \\textbf{B}',
+      '\\end{document}'
+    ].join('\n')
+  );
+});
+
+test('formats plain text comments by normalizing surrounding whitespace only', () => {
+  const input = [
+    '\\begin{document}',
+    '   %   note here   ',
+    '\\end{document}'
+  ].join('\n');
+
+  const output = formatLatex(input);
+
+  assert.equal(
+    output,
+    [
+      '\\begin{document}',
+      '    % note here',
+      '\\end{document}'
+    ].join('\n')
+  );
+});
