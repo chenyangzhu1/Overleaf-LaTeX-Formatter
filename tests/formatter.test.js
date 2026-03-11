@@ -192,3 +192,28 @@ test('formats plain text comments by normalizing surrounding whitespace only', (
     ].join('\n')
   );
 });
+
+test('keeps commented no-format environments unchanged inside the comment block', () => {
+  const input = [
+    '\\begin{document}',
+    '%   \\begin{minted}{python}',
+    '% def   x():',
+    '%     return  1',
+    '%   \\end{minted}',
+    '\\end{document}'
+  ].join('\n');
+
+  const output = formatLatex(input);
+
+  assert.equal(
+    output,
+    [
+      '\\begin{document}',
+      '    % \\begin{minted}{python}',
+      '    % def   x():',
+      '    %     return  1',
+      '    % \\end{minted}',
+      '\\end{document}'
+    ].join('\n')
+  );
+});

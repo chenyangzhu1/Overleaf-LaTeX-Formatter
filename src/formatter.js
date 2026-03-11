@@ -155,7 +155,7 @@
       }
 
       if (isNoFormatActive(envStack)) {
-        outputLines.push(originalLine);
+        outputLines.push(/^\\end\s*\{/.test(trimmedCode) ? trimmedCode : originalLine);
         if (trimmedCode !== '') {
           advanceIndentState();
         }
@@ -178,7 +178,7 @@
   }
 
   function normalizeCommentContent(commentPart) {
-    return trimTrailingWhitespace(commentPart.slice(1)).trimStart();
+    return trimTrailingWhitespace(commentPart.replace(/^% ?/, ''));
   }
 
   function formatCommentBlock(commentParts, baseIndentLevel, indent) {
